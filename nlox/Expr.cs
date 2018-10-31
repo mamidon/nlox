@@ -15,39 +15,6 @@
 	 */
 	public abstract class Expr
 	{
-		
-	}
-
-	public class LiteralExpr : Expr
-	{
-		public readonly Token Literal;
-
-		public LiteralExpr(Token literal)
-		{
-			Literal = literal;
-		}
-	}
-
-	public class GroupingExpr : Expr
-	{
-		public readonly Expr GroupedExpr;
-
-		public GroupingExpr(Expr groupedExpr)
-		{
-			GroupedExpr = groupedExpr;
-		}
-	}
-
-	public class UnaryExpr : Expr
-	{
-		public readonly Token Operator;
-		public readonly Expr Right;
-
-		public UnaryExpr(Token op, Expr right)
-		{
-			Operator = op;
-			Right = right;
-		}
 	}
 
 	public class BinaryExpr : Expr
@@ -56,14 +23,43 @@
 		public readonly Token Operator;
 		public readonly Expr Right;
 
-		public BinaryExpr(Expr left, Token op, Expr right)
+		public BinaryExpr(Expr Left, Token Operator, Expr Right)
 		{
-			Left = left;
-			Operator = op;
-			Right = right;
+			this.Left = Left;
+			this.Operator = Operator;
+			this.Right = Right;
 		}
 	}
-	
-	
-	
+
+	public class GroupingExpr : Expr
+	{
+		public readonly Expr Expression;
+
+		public GroupingExpr(Expr Expression)
+		{
+			this.Expression = Expression;
+		}
+	}
+
+	public class LiteralExpr : Expr
+	{
+		public readonly object Value;
+
+		public LiteralExpr(object Value)
+		{
+			this.Value = Value;
+		}
+	}
+
+	public class UnaryExpr : Expr
+	{
+		public readonly Token Operator;
+		public readonly Expr Right;
+
+		public UnaryExpr(Token Operator, Expr Right)
+		{
+			this.Operator = Operator;
+			this.Right = Right;
+		}
+	}
 }
