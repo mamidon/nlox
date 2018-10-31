@@ -131,7 +131,7 @@ namespace nlox
 					break;
 					
 				default:
-					Lox.Error(_line, $"Unexpected character '{Source[_currentCharacter]}'.");
+					Lox.Error(_line, $"Unexpected character '{character}'.");
 					break;
 			}
 		}
