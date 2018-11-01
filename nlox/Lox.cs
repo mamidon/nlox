@@ -57,7 +57,7 @@ namespace nlox
 				return;
 			}
 
-			Console.Out.WriteLine(expr.Accept(new PrettyPrintingVisitor()));
+			Interpreter.Interpret(expr);
 		}
 
 		public static void RunTimeError(LoxRuntimeErrorException error)
