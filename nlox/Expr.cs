@@ -1,20 +1,19 @@
 ﻿namespace nlox
 {
-	/*
-	 * expression → literal
-           | unary
-           | binary
-           | grouping ;
-		
-		literal    → NUMBER | STRING | "true" | "false" | "nil" ;
-		grouping   → "(" expression ")" ;
-		unary      → ( "-" | "!" ) expression ;
-		binary     → expression operator expression ;
-		operator   → "==" | "!=" | "<" | "<=" | ">" | ">="
-				   | "+"  | "-"  | "*" | "/" ;
+/*
+expression     → equality ;
+equality       → comparison ( ( "!=" | "==" ) comparison )* ;
+comparison     → addition ( ( ">" | ">=" | "<" | "<=" ) addition )* ;
+addition       → multiplication ( ( "-" | "+" ) multiplication )* ;
+multiplication → unary ( ( "/" | "*" ) unary )* ;
+unary          → ( "!" | "-" ) unary
+               | primary ;
+primary        → NUMBER | STRING | "false" | "true" | "nil"
+               | "(" expression ")" ;
 	 */
 	public abstract class Expr
 	{
+		public abstract R Accept<R>(Visitor<R> visitor);
 	}
 
 	public class BinaryExpr : Expr
@@ -29,6 +28,11 @@
 			this.Operator = Operator;
 			this.Right = Right;
 		}
+
+		public override R Accept<R>(Visitor<R> visitor)
+		{
+			return visitor.Visit(this);
+		}
 	}
 
 	public class GroupingExpr : Expr
@@ -39,6 +43,11 @@
 		{
 			this.Expression = Expression;
 		}
+
+		public override R Accept<R>(Visitor<R> visitor)
+		{
+			return visitor.Visit(this);
+		}
 	}
 
 	public class LiteralExpr : Expr
@@ -48,6 +57,11 @@
 		public LiteralExpr(object Value)
 		{
 			this.Value = Value;
+		}
+
+		public override R Accept<R>(Visitor<R> visitor)
+		{
+			return visitor.Visit(this);
 		}
 	}
 
@@ -60,6 +74,11 @@
 		{
 			this.Operator = Operator;
 			this.Right = Right;
+		}
+
+		public override R Accept<R>(Visitor<R> visitor)
+		{
+			return visitor.Visit(this);
 		}
 	}
 }

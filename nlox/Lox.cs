@@ -5,10 +5,12 @@ namespace nlox
 {
 	public static class Lox
 	{
-		static bool hasError = false;
+		static bool hadStaticError = false;
+		static bool hadRunTimeError = false;
+		static InterpretingVisitor Interpreter = new InterpretingVisitor();
 		
 		static void Main(string[] args)
-		{
+		{		
 			if (args.Length > 1) {
 				Console.Out.WriteLine("Usage: nlox [script]");
 			}
@@ -23,7 +25,7 @@ namespace nlox
 		static void RunPrompt()
 		{
 			while (true) {
-				hasError = false;
+				hadStaticError = false;
 				Console.Out.Write("> ");
 				Run(Console.In.ReadLine());
 			}
@@ -34,26 +36,43 @@ namespace nlox
 			var source = File.ReadAllText(filePath);
 
 			Run(source);
+
+			if (hadStaticError) {
+				Environment.Exit(65);
+			}
+			
+			if (hadRunTimeError) {
+				Environment.Exit(70);
+			}
 		}
 
 		static void Run(string source)
 		{
 			var scanner = new Scanner(source);
 			var tokens = scanner.ScanTokens();
+			var parser = new Parser(tokens);
+			var expr = parser.Parse();
 
-			foreach (var token in tokens) {
-				Console.Out.WriteLine(token);
+			if (hadStaticError) {
+				return;
 			}
+
+			Console.Out.WriteLine(expr.Accept(new PrettyPrintingVisitor()));
 		}
 
-		public static void Error(int line, string message)
+		public static void RunTimeError(LoxRuntimeErrorException error)
+		{
+			Console.Error.WriteLine($"[Line: {error.Operator.Line}] {error.Message}");
+		}
+
+		public static void StaticError(int line, string message)
 		{
 			ReportError(line, string.Empty, message);
 		}
 		
 		static void ReportError(int line, string where, string message)
 		{
-			hasError = true;
+			hadStaticError = true;
 			Console.Out.WriteLine($"[line {line}] Error {where}: {message}");
 		}
 	}

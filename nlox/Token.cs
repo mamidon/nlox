@@ -17,7 +17,7 @@
 
 		public override string ToString()
 		{
-			return $"{Type} '{Lexeme}' <{Literal}>";
+			return Lexeme;
 		}
 	}
 }

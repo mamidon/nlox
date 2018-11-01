@@ -62,6 +62,9 @@ namespace GenerateAst
 			}
 			
 			builder.AppendLine("}");
+
+			builder.AppendLine("public override R Visit<R>(Visitor<R> visitor) { return visitor.Visit(this); }");
+			
 			builder.AppendLine("}");
 		}
 
@@ -69,6 +72,7 @@ namespace GenerateAst
 		{
 			builder.AppendLine($"public abstract class {baseClassName}");
 			builder.AppendLine("{");
+			builder.AppendLine("	public abstract R Visit<R>(Visitor<R> visitor);");
 			builder.AppendLine("}");
 		}
 	}

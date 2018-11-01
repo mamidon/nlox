@@ -50,8 +50,8 @@ namespace nlox
 			}
 
 			Tokens.Add(new Token(TokenType.EndOfFile, string.Empty, null, _line));
-			
-			return new Token[0];
+
+			return Tokens;
 		}
 
 		void ScanToken()
@@ -131,7 +131,7 @@ namespace nlox
 					break;
 					
 				default:
-					Lox.Error(_line, $"Unexpected character '{character}'.");
+					Lox.StaticError(_line, $"Unexpected character '{character}'.");
 					break;
 			}
 		}
@@ -183,7 +183,7 @@ namespace nlox
 			}
 
 			if (IsAtEnd()) {
-				Lox.Error(_line, "Unterminated string.");
+				Lox.StaticError(_line, "Unterminated string.");
 			}
 
 			Consume();
@@ -219,8 +219,6 @@ namespace nlox
 		{
 			var length = _currentCharacter - _startOfNextLexeme;
 			var token = new Token(tokenType, Source.Substring(_startOfNextLexeme, length), literal, _line);
-			
-			Console.Out.WriteLine(token.ToString());
 			
 			Tokens.Add(token);
 		}
