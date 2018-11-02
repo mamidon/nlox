@@ -105,4 +105,3 @@ namespace nlox
 		}
 	}
 }
-//{ var foo = nil; { if (foo) { foo = "ran!"; } else { foo = "no"; } } print foo; }
