@@ -13,16 +13,22 @@ declaration → varDecl
 varDecl → "var" IDENTIFIER ( "=" expression )? ";" ;
 
 statement   → exprStmt
+			| ifStmt
             | printStmt
             | block ;
 
 exprStmt  → expression ";" ;
 printStmt → "print" expression ";" ;
 block → "{" declaration* "}" ;
+ifStmt    → "if" "(" expression ")" statement ( "else" statement )? ;
 
 expression → assignment ;
-assignment → IDENTIFIER "=" assignment
-           | equality ;
+
+assignment → identifier "=" assignment
+           | logic_or ;
+logic_or   → logic_and ( "or" logic_and )* ;
+logic_and  → equality ( "and" equality )* ;
+
 equality       → comparison ( ( "!=" | "==" ) comparison )* ;
 comparison     → addition ( ( ">" | ">=" | "<" | "<=" ) addition )* ;
 addition       → multiplication ( ( "-" | "+" ) multiplication )* ;
@@ -177,6 +183,10 @@ primary        → NUMBER | STRING | "false" | "true" | "nil"
 			if (MatchNext(TokenType.LeftBrace)) {
 				return BlockStatement();
 			}
+
+			if (MatchNext(TokenType.If)) {
+				return IfStatement();
+			}
 			
 			return ExpressionStatement();
 		}
@@ -206,7 +216,33 @@ primary        → NUMBER | STRING | "false" | "true" | "nil"
 
 			return new BlockStmt(stmts);
 		}
+
+		Stmt IfStatement()
+		{
+			Consume(TokenType.LeftParen, "Expecting opening '('.");
+
+			var conditionalExpression = Expression();
+
+			Consume(TokenType.RightParen, "Expecting closing ')'.");
+
+			var thenStatement = Statement();
+			Stmt elseStatement = null;
+			
+			if (MatchNext(TokenType.Else)) {
+				elseStatement = Statement();
+			}
+
+			return new IfStmt(conditionalExpression, thenStatement, elseStatement);
+		}
 		
+		/*
+		 * expression → assignment ;
+
+assignment → identifier "=" assignment
+           | logic_or ;
+logic_or   → logic_and ( "or" logic_and )* ;
+logic_and  → equality ( "and" equality )* ;
+		 */
 		Expr Expression()
 		{
 			return Assignment();
@@ -214,7 +250,7 @@ primary        → NUMBER | STRING | "false" | "true" | "nil"
 
 		Expr Assignment()
 		{
-			var expr = Equality();
+			var expr = Or();
 
 			if (MatchNext(TokenType.Equal)) {
 				var equals = Previous();
@@ -225,6 +261,32 @@ primary        → NUMBER | STRING | "false" | "true" | "nil"
 				}
 
 				CreateStaticError(equals, "Invalid assignment target");
+			}
+
+			return expr;
+		}
+
+		Expr Or()
+		{
+			var expr = And();
+
+			while (MatchNext(TokenType.Or)) {
+				var @operator = Previous();
+				var right = And();
+				return new LogicalExpr(expr, @operator, right);
+			}
+
+			return expr;
+		}
+
+		Expr And()
+		{
+			var expr = Equality();
+
+			while (MatchNext(TokenType.And)) {
+				var @operator = Previous();
+				var right = Equality();
+				return new LogicalExpr(expr, @operator, right);
 			}
 
 			return expr;

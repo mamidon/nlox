@@ -31,7 +31,14 @@ namespace nlox
 				if (!input.Trim().EndsWith(";") && !input.Trim().EndsWith("}")) {
 					input = input + ";";
 				}
-				
+
+				var tokens = new Scanner(input).ScanTokens();
+				var stmts = new Parser(tokens).Parse();
+				foreach (var stmt in stmts) {
+					var printer = new PrettyPrintingVisitor();
+					stmt.Accept(printer);
+					Console.Out.WriteLine(printer.ToString());
+				}
 				Run(input);
 			}
 		}

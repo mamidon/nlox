@@ -105,6 +105,25 @@ namespace nlox
 		}
 	}
 
+	public class LogicalExpr : Expr
+	{
+		public readonly Expr Left;
+		public readonly Token Operator;
+		public readonly Expr Right;
+
+		public LogicalExpr(Expr Left, Token Operator, Expr Right)
+		{
+			this.Left = Left;
+			this.Operator = Operator;
+			this.Right = Right;
+		}
+
+		public override R Accept<R>(IExprVisitor<R> visitor)
+		{
+			return visitor.Visit(this);
+		}
+	}
+
 	public abstract class Stmt
 	{
 		public abstract void Accept(IStmtVisitor visitor);
@@ -164,6 +183,25 @@ namespace nlox
 		{
 			this.Name = Name;
 			this.Initializer = Initializer;
+		}
+
+		public override void Accept(IStmtVisitor visitor)
+		{
+			visitor.Visit(this);
+		}
+	}
+
+	public class IfStmt : Stmt
+	{
+		public readonly Expr Condition;
+		public readonly Stmt ThenStatement;
+		public readonly Stmt ElseStatement;
+
+		public IfStmt(Expr Condition, Stmt ThenStatement, Stmt ElseStatement)
+		{
+			this.Condition = Condition;
+			this.ThenStatement = ThenStatement;
+			this.ElseStatement = ElseStatement;
 		}
 
 		public override void Accept(IStmtVisitor visitor)

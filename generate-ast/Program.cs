@@ -15,7 +15,8 @@ namespace GenerateAst
 				"Grouping : Expr Expression",                      
 				"Literal  : object Value",                         
 				"Unary    : Token Operator, Expr Right",
-				"Variable : Token Name"
+				"Variable : Token Name",
+				"Logical : Expr Left, Token Operator, Expr Right",
 			};
 			Console.Out.WriteLine(BuildAbstractSyntaxExprTreeCode("Expr", expressionTypes));
 			
@@ -23,7 +24,8 @@ namespace GenerateAst
 				"Block : List<Stmt> Statements",
 				"Expression : Expr Expression",
 				"Print : Expr Expression",
-				"Var : Token Name, Expr Initializer"
+				"Var : Token Name, Expr Initializer",
+				"If : Expr Condition, Stmt ThenStatement, Stmt ElseStatement"
 			};
 			Console.Out.WriteLine(BuildAbstractSyntaxStmtTreeCode("Stmt", statementTypes));
 		}

@@ -93,6 +93,28 @@ namespace nlox
 			}
 		}
 
+		public object Visit(LogicalExpr expr)
+		{
+			var left = Evaluate(expr.Left);
+
+			switch (expr.Operator.Type) {
+				case TokenType.And:
+					if (!IsTruthy(left)) {
+						return left;
+					}
+
+					break;
+				case TokenType.Or:
+					if (IsTruthy(left)) {
+						return left;
+					}
+
+					break;
+			}
+
+			return Evaluate(expr.Right);
+		}
+
 		public object Visit(UnaryExpr expr)
 		{
 			var right = Evaluate(expr.Right);
@@ -135,6 +157,17 @@ namespace nlox
 				}
 			} finally {
 				_currentEnvironment = holding;
+			}
+		}
+
+		public void Visit(IfStmt stmt)
+		{
+			var conditionalResult = Evaluate(stmt.Condition);
+
+			if (IsTruthy(conditionalResult)) {
+				Execute(stmt.ThenStatement);
+			} else if (stmt.ElseStatement != null) {
+				Execute(stmt.ElseStatement);
 			}
 		}
 

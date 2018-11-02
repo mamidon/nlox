@@ -7,7 +7,7 @@ namespace nlox
 	public class Scanner
 	{
 		static readonly Dictionary<string, TokenType> ReservedWords = new Dictionary<string, TokenType> {
-			{"", TokenType.And},
+			{"and", TokenType.And},
 			{"class", TokenType.Class},
 			{"else", TokenType.Else},
 			{"false", TokenType.False},
