@@ -9,34 +9,44 @@ namespace GenerateAst
 	{
 		static void Main(string[] args)
 		{
-			var types = new[] {
+			var expressionTypes = new[] {
+				"Assign : Token Name, Expr Value",
 				"Binary   : Expr Left, Token Operator, Expr Right",
 				"Grouping : Expr Expression",                      
 				"Literal  : object Value",                         
-				"Unary    : Token Operator, Expr Right"  
+				"Unary    : Token Operator, Expr Right",
+				"Variable : Token Name"
 			};
-			Console.Out.Write(BuildAbstractSyntaxTreeCode("Expr", types));
+			Console.Out.WriteLine(BuildAbstractSyntaxExprTreeCode("Expr", expressionTypes));
+			
+			var statementTypes = new[] {
+				"Block : List<Stmt> Statements",
+				"Expression : Expr Expression",
+				"Print : Expr Expression",
+				"Var : Token Name, Expr Initializer"
+			};
+			Console.Out.WriteLine(BuildAbstractSyntaxStmtTreeCode("Stmt", statementTypes));
 		}
 
-		static string BuildAbstractSyntaxTreeCode(string baseClassName, IEnumerable<string> types)
+		static string BuildAbstractSyntaxExprTreeCode(string baseClassName, IEnumerable<string> types)
 		{
 			var builder = new StringBuilder();
-			BuildBaseClass(builder, baseClassName);
+			BuildBaseExprClass(builder, baseClassName);
 
 			foreach (var type in types) {
-				BuildType(builder, type, baseClassName);
+				BuildExprType(builder, type, baseClassName);
 			}
 
 			return builder.ToString();
 		}
 
-		static void BuildType(StringBuilder builder, string type, string baseType)
+		static void BuildExprType(StringBuilder builder, string type, string baseType)
 		{
 			var typeName = type.Split(':')[0].Trim();
 			var fields = type.Split(':')[1].Trim();
 			
-			builder.AppendLine($"public class {typeName}{baseType} : {baseType}");
-			builder.AppendLine("{");
+			builder.Append($"public class {typeName}{baseType} : {baseType}");
+			builder.Append("{");
 
 			var fieldDefinitions = new List<(string FieldType, string FieldName)>();
 			foreach (var fieldString in fields.Split(',').Select(f => f.Trim())) {
@@ -47,33 +57,91 @@ namespace GenerateAst
 			}
 
 			foreach (var definition in fieldDefinitions) {
-				builder.AppendLine($"public readonly {definition.FieldType} {definition.FieldName};");
+				builder.Append($"public readonly {definition.FieldType} {definition.FieldName};");
 			}
 
 			builder.Append($"public {typeName}{baseType}(");
 
 			builder.Append(string.Join(',', fieldDefinitions.Select(d => $"{d.FieldType} {d.FieldName}")));
 
-			builder.AppendLine(")");
-			builder.AppendLine("{");
+			builder.Append(")");
+			builder.Append("{");
 
 			foreach (var definition in fieldDefinitions) {
-				builder.AppendLine($"this.{definition.FieldName} = {definition.FieldName};");
+				builder.Append($"this.{definition.FieldName} = {definition.FieldName};");
 			}
 			
-			builder.AppendLine("}");
+			builder.Append("}");
 
-			builder.AppendLine("public override R Visit<R>(Visitor<R> visitor) { return visitor.Visit(this); }");
+			builder.Append($"public override R Accept<R>(I{baseType}Visitor<R> visitor) {{ return visitor.Visit(this); }}");
 			
-			builder.AppendLine("}");
+			builder.Append("}");
 		}
 
-		static void BuildBaseClass(StringBuilder builder, string baseClassName)
+		static void BuildBaseExprClass(StringBuilder builder, string baseClassName)
 		{
-			builder.AppendLine($"public abstract class {baseClassName}");
-			builder.AppendLine("{");
-			builder.AppendLine("	public abstract R Visit<R>(Visitor<R> visitor);");
-			builder.AppendLine("}");
+			builder.Append($"public abstract class {baseClassName}");
+			builder.Append("{");
+			builder.Append($"	public abstract R Accept<R>(I{baseClassName}Visitor<R> visitor);");
+			builder.Append("}");
+		}
+		
+		static string BuildAbstractSyntaxStmtTreeCode(string baseClassName, IEnumerable<string> types)
+		{
+			var builder = new StringBuilder();
+			BuildStmtBaseClass(builder, baseClassName);
+
+			foreach (var type in types) {
+				BuildStmtType(builder, type, baseClassName);
+			}
+
+			return builder.ToString();
+		}
+
+		static void BuildStmtType(StringBuilder builder, string type, string baseType)
+		{
+			var typeName = type.Split(':')[0].Trim();
+			var fields = type.Split(':')[1].Trim();
+			
+			builder.Append($"public class {typeName}{baseType} : {baseType}");
+			builder.Append("{");
+
+			var fieldDefinitions = new List<(string FieldType, string FieldName)>();
+			foreach (var fieldString in fields.Split(',').Select(f => f.Trim())) {
+				var fieldType = fieldString.Split()[0].Trim();
+				var fieldName = fieldString.Split()[1].Trim();
+				
+				fieldDefinitions.Add((fieldType, fieldName));
+			}
+
+			foreach (var definition in fieldDefinitions) {
+				builder.Append($"public readonly {definition.FieldType} {definition.FieldName};");
+			}
+
+			builder.Append($"public {typeName}{baseType}(");
+
+			builder.Append(string.Join(',', fieldDefinitions.Select(d => $"{d.FieldType} {d.FieldName}")));
+
+			builder.Append(")");
+			builder.Append("{");
+
+			foreach (var definition in fieldDefinitions) {
+				builder.Append($"this.{definition.FieldName} = {definition.FieldName};");
+			}
+			
+			builder.Append("}");
+
+			builder.Append($"public override void Accept(I{baseType}Visitor visitor) {{ visitor.Visit(this); }}");
+			
+			builder.Append("}");
+		}
+
+		static void BuildStmtBaseClass(StringBuilder builder, string baseClassName)
+		{
+			builder.Append($"public abstract class {baseClassName}");
+			builder.Append("{");
+			builder.Append($"	public abstract void Accept(I{baseClassName}Visitor visitor);");
+			builder.Append("}");
 		}
 	}
 }

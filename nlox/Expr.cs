@@ -1,19 +1,27 @@
-﻿namespace nlox
+﻿using System.Collections.Generic;
+
+namespace nlox
 {
-/*
-expression     → equality ;
-equality       → comparison ( ( "!=" | "==" ) comparison )* ;
-comparison     → addition ( ( ">" | ">=" | "<" | "<=" ) addition )* ;
-addition       → multiplication ( ( "-" | "+" ) multiplication )* ;
-multiplication → unary ( ( "/" | "*" ) unary )* ;
-unary          → ( "!" | "-" ) unary
-               | primary ;
-primary        → NUMBER | STRING | "false" | "true" | "nil"
-               | "(" expression ")" ;
-	 */
 	public abstract class Expr
 	{
-		public abstract R Accept<R>(Visitor<R> visitor);
+		public abstract R Accept<R>(IExprVisitor<R> visitor);
+	}
+
+	public class AssignExpr : Expr
+	{
+		public readonly Token Name;
+		public readonly Expr Value;
+
+		public AssignExpr(Token Name, Expr Value)
+		{
+			this.Name = Name;
+			this.Value = Value;
+		}
+
+		public override R Accept<R>(IExprVisitor<R> visitor)
+		{
+			return visitor.Visit(this);
+		}
 	}
 
 	public class BinaryExpr : Expr
@@ -29,7 +37,7 @@ primary        → NUMBER | STRING | "false" | "true" | "nil"
 			this.Right = Right;
 		}
 
-		public override R Accept<R>(Visitor<R> visitor)
+		public override R Accept<R>(IExprVisitor<R> visitor)
 		{
 			return visitor.Visit(this);
 		}
@@ -44,7 +52,7 @@ primary        → NUMBER | STRING | "false" | "true" | "nil"
 			this.Expression = Expression;
 		}
 
-		public override R Accept<R>(Visitor<R> visitor)
+		public override R Accept<R>(IExprVisitor<R> visitor)
 		{
 			return visitor.Visit(this);
 		}
@@ -59,7 +67,7 @@ primary        → NUMBER | STRING | "false" | "true" | "nil"
 			this.Value = Value;
 		}
 
-		public override R Accept<R>(Visitor<R> visitor)
+		public override R Accept<R>(IExprVisitor<R> visitor)
 		{
 			return visitor.Visit(this);
 		}
@@ -76,9 +84,91 @@ primary        → NUMBER | STRING | "false" | "true" | "nil"
 			this.Right = Right;
 		}
 
-		public override R Accept<R>(Visitor<R> visitor)
+		public override R Accept<R>(IExprVisitor<R> visitor)
 		{
 			return visitor.Visit(this);
+		}
+	}
+
+	public class VariableExpr : Expr
+	{
+		public readonly Token Name;
+
+		public VariableExpr(Token Name)
+		{
+			this.Name = Name;
+		}
+
+		public override R Accept<R>(IExprVisitor<R> visitor)
+		{
+			return visitor.Visit(this);
+		}
+	}
+
+	public abstract class Stmt
+	{
+		public abstract void Accept(IStmtVisitor visitor);
+	}
+
+	public class BlockStmt : Stmt
+	{
+		public readonly List<Stmt> Statements;
+
+		public BlockStmt(List<Stmt> Statements)
+		{
+			this.Statements = Statements;
+		}
+
+		public override void Accept(IStmtVisitor visitor)
+		{
+			visitor.Visit(this);
+		}
+	}
+
+	public class ExpressionStmt : Stmt
+	{
+		public readonly Expr Expression;
+
+		public ExpressionStmt(Expr Expression)
+		{
+			this.Expression = Expression;
+		}
+
+		public override void Accept(IStmtVisitor visitor)
+		{
+			visitor.Visit(this);
+		}
+	}
+
+	public class PrintStmt : Stmt
+	{
+		public readonly Expr Expression;
+
+		public PrintStmt(Expr Expression)
+		{
+			this.Expression = Expression;
+		}
+
+		public override void Accept(IStmtVisitor visitor)
+		{
+			visitor.Visit(this);
+		}
+	}
+
+	public class VarStmt : Stmt
+	{
+		public readonly Token Name;
+		public readonly Expr Initializer;
+
+		public VarStmt(Token Name, Expr Initializer)
+		{
+			this.Name = Name;
+			this.Initializer = Initializer;
+		}
+
+		public override void Accept(IStmtVisitor visitor)
+		{
+			visitor.Visit(this);
 		}
 	}
 }

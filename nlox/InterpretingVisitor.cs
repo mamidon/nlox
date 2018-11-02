@@ -1,17 +1,28 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace nlox
 {
-	public class InterpretingVisitor : Visitor<object>
+	public class InterpretingVisitor : IExprVisitor<object>, IStmtVisitor
 	{
-		public void Interpret(Expr expr)
+		readonly LoxEnvironment _globalEnvironment;
+		LoxEnvironment _currentEnvironment;
+		
+		public InterpretingVisitor()
+		{
+			_globalEnvironment = new LoxEnvironment();
+			_currentEnvironment = _globalEnvironment;
+		}
+		
+		public void Interpret(IEnumerable<Stmt> statements)
 		{
 			try {
-				var result = expr.Accept(this);
-				Console.Out.WriteLine(stringify(result));
+				foreach (var stmt in statements) {
+					Execute(stmt);
+				}
 			} catch (LoxRuntimeErrorException loxRuntimeError) {
 				Lox.RunTimeError(loxRuntimeError);
-			}
+			} 
 		}
 
 		string stringify(object result)
@@ -29,7 +40,14 @@ namespace nlox
 			return str;
 		}
 
-		public override object Visit(BinaryExpr expr)
+		public object Visit(AssignExpr expr)
+		{
+			var value = Evaluate(expr.Value);
+			_globalEnvironment.Assign(expr.Name, value);
+			return value;
+		}
+
+		public object Visit(BinaryExpr expr)
 		{
 			var left = Evaluate(expr.Left);
 			var right = Evaluate(expr.Right);
@@ -75,7 +93,7 @@ namespace nlox
 			}
 		}
 
-		public override object Visit(UnaryExpr expr)
+		public object Visit(UnaryExpr expr)
 		{
 			var right = Evaluate(expr.Right);
 
@@ -90,19 +108,65 @@ namespace nlox
 			}
 		}
 
-		public override object Visit(GroupingExpr expr)
+		public object Visit(GroupingExpr expr)
 		{
 			return Evaluate(expr.Expression);
 		}
 
-		public override object Visit(LiteralExpr expr)
+		public object Visit(LiteralExpr expr)
 		{
 			return expr.Value;
+		}
+
+		public object Visit(VariableExpr expr)
+		{
+			return _globalEnvironment.Get(expr.Name);
+		}
+
+		public void Visit(BlockStmt stmt)
+		{
+			var holding = _currentEnvironment;
+
+			try {
+				_currentEnvironment = new LoxEnvironment(_currentEnvironment);
+
+				foreach (var innerStmt in stmt.Statements) {
+					Execute(innerStmt);
+				}
+			} finally {
+				_currentEnvironment = holding;
+			}
+		}
+
+		public void Visit(VarStmt stmt)
+		{
+			object value = null;
+
+			if (stmt.Initializer != null) {
+				value = Evaluate(stmt.Initializer);
+			}
+			
+			_globalEnvironment.Define(stmt.Name.Lexeme, value);
+		}
+
+		public void Visit(PrintStmt stmt)
+		{
+			Console.Out.WriteLine(stringify(Evaluate(stmt.Expression)));
+		}
+
+		public void Visit(ExpressionStmt stmt)
+		{
+			Evaluate(stmt.Expression);
 		}
 
 		object Evaluate(Expr expr)
 		{
 			return expr.Accept(this);
+		}
+
+		void Execute(Stmt stmt)
+		{
+			stmt.Accept(this);
 		}
 
 		bool IsTruthy(object obj)

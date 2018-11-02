@@ -1,25 +1,35 @@
 ﻿namespace nlox
 {
-	public class PrettyPrintingVisitor : Visitor<string>
+	public class PrettyPrintingVisitor : IExprVisitor<string>
 	{
-		public override string Visit(BinaryExpr expr)
+		public string Visit(AssignExpr expr)
+		{
+			return $"(= {expr.Name.Lexeme} {expr.Value.Accept(this)}";
+		}
+
+		public string Visit(BinaryExpr expr)
 		{
 			return $"({expr.Operator} {expr.Left.Accept(this)} {expr.Right.Accept(this)})";
 		}
 
-		public override string Visit(UnaryExpr expr)
+		public string Visit(UnaryExpr expr)
 		{
 			return $"({expr.Operator} {expr.Right.Accept(this)})";
 		}
 
-		public override string Visit(GroupingExpr expr)
+		public string Visit(GroupingExpr expr)
 		{
 			return $"(group {expr.Expression.Accept(this)})";
 		}
 
-		public override string Visit(LiteralExpr expr)
+		public string Visit(LiteralExpr expr)
 		{
 			return $"{expr.Value ?? "nil"}";
+		}
+
+		public string Visit(VariableExpr expr)
+		{
+			return $"(identifier '{expr.Name}')";
 		}
 	}
 }

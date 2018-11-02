@@ -4,43 +4,77 @@ using System.Linq;
 
 namespace nlox
 {	
+	/*
+program     → declaration* EOF ;
+
+declaration → varDecl
+            | statement ;
+            
+varDecl → "var" IDENTIFIER ( "=" expression )? ";" ;
+
+statement   → exprStmt
+            | printStmt
+            | block ;
+
+exprStmt  → expression ";" ;
+printStmt → "print" expression ";" ;
+block → "{" declaration* "}" ;
+
+expression → assignment ;
+assignment → IDENTIFIER "=" assignment
+           | equality ;
+equality       → comparison ( ( "!=" | "==" ) comparison )* ;
+comparison     → addition ( ( ">" | ">=" | "<" | "<=" ) addition )* ;
+addition       → multiplication ( ( "-" | "+" ) multiplication )* ;
+multiplication → unary ( ( "/" | "*" ) unary )* ;
+unary          → ( "!" | "-" ) unary
+               | primary ;
+primary        → NUMBER | STRING | "false" | "true" | "nil"
+               | "(" expression ")" ;
+	 */
 	public class Parser
 	{
-		readonly IReadOnlyList<Token> Tokens;
+		readonly IReadOnlyList<Token> _tokens;
 		int _nextToken;
 		
 		public Parser(IReadOnlyList<Token> tokens)
 		{
 			if (!tokens.Any()) {
-				throw new ArgumentException("No tokens to parse", nameof(Tokens));
+				throw new ArgumentException("No tokens to parse", nameof(_tokens));
 			}
 			
-			Tokens = tokens;
+			_tokens = tokens;
 			_nextToken = 0;
 		}
 
-		public Expr Parse()
+		public List<Stmt> Parse()
 		{
 			try {
-				return Expression();
-			} catch (LoxRuntimeErrorException error) {
+				var statements = new List<Stmt>();
+
+				while (!IsAtEnd()) {
+					statements.Add(Declaration());
+				}
+
+				return statements;
+			} catch (LoxRuntimeErrorException) {
 				return null;
 			}
 		}
 
 		bool IsAtEnd()
 		{
-			return Tokens[_nextToken].Type == TokenType.EndOfFile;
+			return _tokens[_nextToken].Type == TokenType.EndOfFile;
 		}
 
 		Token Previous()
 		{
-			return Tokens[_nextToken - 1];
+			return _tokens[_nextToken - 1];
 		}
 
 		Token PeekNext()
 		{
-			return Tokens[_nextToken];
+			return _tokens[_nextToken];
 		}
 
 		Token ConsumeNext()
@@ -49,7 +83,7 @@ namespace nlox
 				return PeekNext();
 			}
 			
-			return Tokens[_nextToken++];
+			return _tokens[_nextToken++];
 		}
 
 		bool MatchNext(TokenType expected)
@@ -66,12 +100,14 @@ namespace nlox
 			return true;
 		}
 
-		void Consume(TokenType expected, string message)
+		Token Consume(TokenType expected, string message)
 		{
 			if (!MatchNext(expected)) {
 				var badToken = PeekNext();
 				throw CreateStaticError(badToken, message);
 			}
+
+			return Previous();
 		}
 
 		Exception CreateStaticError(Token badToken, string message)
@@ -105,9 +141,93 @@ namespace nlox
 			}
 		}
 		
+		Stmt Declaration()
+		{
+			try {
+				if (MatchNext(TokenType.Var)) {
+					return VarDeclaration();
+				}
+
+				return Statement();
+			} catch (LoxStaticErrorException) {
+				Synchronize();
+				return null;
+			}
+		}
+
+		Stmt VarDeclaration()
+		{
+			var identifier = Consume(TokenType.Identifier, "Identifier expected.");
+			Expr initializer = null;
+			
+			if (MatchNext(TokenType.Equal)) {
+				initializer = Expression();
+			}
+
+			Consume(TokenType.SemiColon, "Expected ';' after variable declaration.");
+			return new VarStmt(identifier, initializer);
+		}
+
+		Stmt Statement()
+		{
+			if (MatchNext(TokenType.Print)) {
+				return PrintStatement();
+			}
+
+			if (MatchNext(TokenType.LeftBrace)) {
+				return BlockStatement();
+			}
+			
+			return ExpressionStatement();
+		}
+
+		Stmt PrintStatement()
+		{
+			var expr = Expression();
+			Consume(TokenType.SemiColon, "Expected terminating ';'.");
+			return new PrintStmt(expr);
+		}
+
+		Stmt ExpressionStatement()
+		{
+			var expr = Expression();
+			Consume(TokenType.SemiColon, "Expected terminating ';'.");
+			return new ExpressionStmt(expr);
+		}
+
+		Stmt BlockStatement()
+		{
+			var stmts = new List<Stmt>();
+			while (PeekNext().Type != TokenType.RightBrace && !IsAtEnd()) {
+				stmts.Add(Declaration());
+			}
+
+			Consume(TokenType.RightBrace, "Expected enclosing '}'.");
+
+			return new BlockStmt(stmts);
+		}
+		
 		Expr Expression()
 		{
-			return Equality();
+			return Assignment();
+		}
+
+		Expr Assignment()
+		{
+			var expr = Equality();
+
+			if (MatchNext(TokenType.Equal)) {
+				var equals = Previous();
+				var value = Assignment();
+
+				if (expr is VariableExpr variableExpr) {
+					return new AssignExpr(variableExpr.Name, value);
+				}
+
+				CreateStaticError(equals, "Invalid assignment target");
+			}
+
+			return expr;
 		}
 
 		Expr Equality()
@@ -196,6 +316,10 @@ namespace nlox
 
 			if (MatchNext(TokenType.Number) || MatchNext(TokenType.String)) {
 				return new LiteralExpr(Previous().Literal);
+			}
+
+			if (MatchNext(TokenType.Identifier)) {
+				return new VariableExpr(Previous());
 			}
 
 

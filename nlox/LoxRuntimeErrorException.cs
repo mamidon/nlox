@@ -5,12 +5,10 @@ namespace nlox
 	public class LoxRuntimeErrorException : Exception
 	{
 		public readonly Token Operator;
-		public readonly object Operand;
 		
-		public LoxRuntimeErrorException(Token @operator, object operand)
+		public LoxRuntimeErrorException(Token @operator, string message) : base(message)
 		{
 			Operator = @operator;
-			Operand = operand;
 		}
 	}
 }

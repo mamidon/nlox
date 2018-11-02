@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace nlox
@@ -8,16 +9,14 @@ namespace nlox
 		static bool hadStaticError = false;
 		static bool hadRunTimeError = false;
 		static InterpretingVisitor Interpreter = new InterpretingVisitor();
-		
+
 		static void Main(string[] args)
-		{		
+		{
 			if (args.Length > 1) {
 				Console.Out.WriteLine("Usage: nlox [script]");
-			}
-			else if (args.Length == 1) {
+			} else if (args.Length == 1) {
 				RunFile(args[0]);
-			}
-			else {
+			} else {
 				RunPrompt();
 			}
 		}
@@ -27,7 +26,13 @@ namespace nlox
 			while (true) {
 				hadStaticError = false;
 				Console.Out.Write("> ");
-				Run(Console.In.ReadLine());
+				var input = Console.In.ReadLine() ?? string.Empty;
+				
+				if (!input.Trim().EndsWith(";") && !input.Trim().EndsWith("}")) {
+					input = input + ";";
+				}
+				
+				Run(input);
 			}
 		}
 
@@ -48,16 +53,20 @@ namespace nlox
 
 		static void Run(string source)
 		{
-			var scanner = new Scanner(source);
-			var tokens = scanner.ScanTokens();
-			var parser = new Parser(tokens);
-			var expr = parser.Parse();
+			var stmts = new List<Stmt>();
+			try {
+				var scanner = new Scanner(source);
+				var tokens = scanner.ScanTokens();
+				var parser = new Parser(tokens);
+				stmts = parser.Parse();
+			} catch (LoxStaticErrorException loxStaticError) {
+			}
 
 			if (hadStaticError) {
 				return;
 			}
-
-			Interpreter.Interpret(expr);
+			
+			Interpreter.Interpret(stmts);
 		}
 
 		public static void RunTimeError(LoxRuntimeErrorException error)
