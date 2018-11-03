@@ -12,7 +12,8 @@ namespace GenerateAst
 			var expressionTypes = new[] {
 				"Assign : Token Name, Expr Value",
 				"Binary   : Expr Left, Token Operator, Expr Right",
-				"Grouping : Expr Expression",                      
+				"Grouping : Expr Expression",          
+				"Call : Expr Callee, Token ClosingParen, List<Expr> Arguments",
 				"Literal  : object Value",                         
 				"Unary    : Token Operator, Expr Right",
 				"Variable : Token Name",

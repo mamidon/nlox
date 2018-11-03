@@ -5,6 +5,7 @@
 		R Visit(AssignExpr expr);
 		R Visit(BinaryExpr expr);
 		R Visit(UnaryExpr expr);
+		R Visit(CallExpr expr);
 		R Visit(GroupingExpr expr);
 		R Visit(LiteralExpr expr);
 		R Visit(VariableExpr expr);

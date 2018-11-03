@@ -29,6 +29,11 @@ namespace nlox
 			return $"({expr.Operator} {expr.Right.Accept(this)})";
 		}
 
+		public string Visit(CallExpr expr)
+		{
+			return $"(call {expr.Callee.Accept(this)} ...";
+		}
+
 		public string Visit(GroupingExpr expr)
 		{
 			return $"(group {expr.Expression.Accept(this)})";

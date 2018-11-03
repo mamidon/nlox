@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace nlox
 {
@@ -12,6 +13,8 @@ namespace nlox
 		{
 			_globalEnvironment = new LoxEnvironment();
 			_currentEnvironment = _globalEnvironment;
+			var start = DateTime.UtcNow.Ticks;
+			_globalEnvironment.Define("clock", new NativeLoxCallable(0, (args) => (double) (DateTime.UtcNow.Ticks - start) / 10000));
 		}
 		
 		public void Interpret(IEnumerable<Stmt> statements)
@@ -127,6 +130,23 @@ namespace nlox
 					return !IsTruthy(right);
 				default:
 					throw new InvalidOperationException($"Unexpected non-unary operator '{expr.Operator.Type}'");
+			}
+		}
+
+		public object Visit(CallExpr expr)
+		{
+			var callee = Evaluate(expr.Callee);
+
+			var arguments = expr.Arguments.Select(Evaluate).ToList();
+			
+			if(callee is ILoxCallable callable) {
+				if (callable.Arity() != arguments.Count) {
+					throw new LoxRuntimeErrorException(expr.ClosingParen, $"Callee expects {callable.Arity()} arguments, but was passed {arguments.Count} arguments.");
+				}
+				
+				return callable.Call(this, arguments);
+			} else {
+				throw new LoxRuntimeErrorException(expr.ClosingParen, "Callee is not a function");
 			}
 		}
 

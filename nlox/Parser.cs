@@ -43,7 +43,10 @@ comparison     → addition ( ( ">" | ">=" | "<" | "<=" ) addition )* ;
 addition       → multiplication ( ( "-" | "+" ) multiplication )* ;
 multiplication → unary ( ( "/" | "*" ) unary )* ;
 unary          → ( "!" | "-" ) unary
-               | primary ;
+               | call ;
+               
+call		   → primary "(" ( arguments )* ")" ;
+arguments      → "(" expression ( "," expression )* ")" ;
 primary        → NUMBER | STRING | "false" | "true" | "nil"
                | "(" expression ")" ;
 	 */
@@ -431,7 +434,41 @@ primary        → NUMBER | STRING | "false" | "true" | "nil"
 				return new UnaryExpr(@operator, right);
 			}
 
-			return Primary();
+			return CallExpression();
+		}
+
+		Expr CallExpression()
+		{
+			var expr = Primary();
+
+			while (true) {
+				if (MatchNext(TokenType.LeftParen)) {
+					expr = FinishCallExpression(expr);
+				} else {
+					break;
+				}
+			}
+
+			return expr;
+		}
+
+		Expr FinishCallExpression(Expr callee)
+		{
+			var arguments = new List<Expr>();
+
+			if (PeekNext().Type != TokenType.RightParen) {
+				do {
+					if (arguments.Count > 8) {
+						CreateStaticError(PeekNext(), "Cannot have more than 8 arguments for a function.");
+					}
+					
+					arguments.Add(Expression());
+				} while (MatchNext(TokenType.Comma));
+			}
+
+			var closingToken = Consume(TokenType.RightParen, "Expected closing ')'.");
+
+			return new CallExpr(callee, closingToken, arguments);
 		}
 
 		Expr Primary()

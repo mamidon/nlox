@@ -58,6 +58,25 @@ namespace nlox
 		}
 	}
 
+	public class CallExpr : Expr
+	{
+		public readonly Expr Callee;
+		public readonly Token ClosingParen;
+		public readonly List<Expr> Arguments;
+
+		public CallExpr(Expr Callee, Token ClosingParen, List<Expr> Arguments)
+		{
+			this.Callee = Callee;
+			this.ClosingParen = ClosingParen;
+			this.Arguments = Arguments;
+		}
+
+		public override R Accept<R>(IExprVisitor<R> visitor)
+		{
+			return visitor.Visit(this);
+		}
+	}
+
 	public class LiteralExpr : Expr
 	{
 		public readonly object Value;
