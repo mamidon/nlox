@@ -15,6 +15,7 @@
 	{
 		void Visit(BlockStmt stmt);
 		void Visit(IfStmt stmt);
+		void Visit(WhileStmt stmt);
 		void Visit(VarStmt stmt);
 		void Visit(PrintStmt stmt);
 		void Visit(ExpressionStmt stmt);

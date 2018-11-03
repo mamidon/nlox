@@ -209,4 +209,21 @@ namespace nlox
 			visitor.Visit(this);
 		}
 	}
+
+	public class WhileStmt : Stmt
+	{
+		public readonly Expr Condition;
+		public readonly Stmt BodyStatement;
+
+		public WhileStmt(Expr Condition, Stmt BodyStatement)
+		{
+			this.Condition = Condition;
+			this.BodyStatement = BodyStatement;
+		}
+
+		public override void Accept(IStmtVisitor visitor)
+		{
+			visitor.Visit(this);
+		}
+	}
 }

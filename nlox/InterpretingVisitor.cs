@@ -171,6 +171,13 @@ namespace nlox
 			}
 		}
 
+		public void Visit(WhileStmt stmt)
+		{
+			while (IsTruthy(Evaluate(stmt.Condition))) {
+				Execute(stmt.BodyStatement);
+			}
+		}
+
 		public void Visit(VarStmt stmt)
 		{
 			object value = null;

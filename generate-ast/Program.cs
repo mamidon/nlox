@@ -25,7 +25,8 @@ namespace GenerateAst
 				"Expression : Expr Expression",
 				"Print : Expr Expression",
 				"Var : Token Name, Expr Initializer",
-				"If : Expr Condition, Stmt ThenStatement, Stmt ElseStatement"
+				"If : Expr Condition, Stmt ThenStatement, Stmt ElseStatement",
+				"While : Expr Condition, Stmt BodyStatement"
 			};
 			Console.Out.WriteLine(BuildAbstractSyntaxStmtTreeCode("Stmt", statementTypes));
 		}

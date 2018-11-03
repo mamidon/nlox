@@ -14,6 +14,8 @@ varDecl → "var" IDENTIFIER ( "=" expression )? ";" ;
 
 statement   → exprStmt
 			| ifStmt
+			| whileStmt
+			| forStmt
             | printStmt
             | block ;
 
@@ -21,6 +23,13 @@ exprStmt  → expression ";" ;
 printStmt → "print" expression ";" ;
 block → "{" declaration* "}" ;
 ifStmt    → "if" "(" expression ")" statement ( "else" statement )? ;
+whileStmt → "while" "(" expression ")" statement ;
+forStmt → "for" "(" 
+	( varDecl | exprStmt ";" ) 
+	expression? ";" 
+	expression? ")" 
+	
+	statement ;
 
 expression → assignment ;
 
@@ -187,8 +196,66 @@ primary        → NUMBER | STRING | "false" | "true" | "nil"
 			if (MatchNext(TokenType.If)) {
 				return IfStatement();
 			}
+
+			if (MatchNext(TokenType.While)) {
+				return WhileStatement();
+			}
+
+			if (MatchNext(TokenType.For)) {
+				return ForStatement();
+			}
 			
 			return ExpressionStatement();
+		}
+
+		Stmt ForStatement()
+		{
+			Consume(TokenType.LeftParen, "Expected opening '('.");
+
+			Stmt initializer = null;
+			if (MatchNext(TokenType.Var)) {
+				initializer = VarDeclaration();
+			} else if (MatchNext(TokenType.SemiColon)) {
+				initializer = null;
+			} else {
+				initializer = ExpressionStatement();
+			}
+
+			Expr conditional = null;
+			if (!MatchNext(TokenType.SemiColon)) {
+				conditional = Expression();
+				Consume(TokenType.SemiColon, "Expecting ';' in for loop");
+			}
+
+
+			Expr incrementer = null;
+			if (!MatchNext(TokenType.RightParen)) {
+				incrementer = Expression();
+				Consume(TokenType.RightParen, "Expected closing ')' in for loop");
+			}
+
+			var body = Statement();
+
+			if (incrementer != null) {
+				body = new BlockStmt(new List<Stmt> {
+					body,
+					new ExpressionStmt(incrementer)
+				});
+			}
+
+			if (conditional == null) {
+				conditional = new LiteralExpr(true);
+			}
+			body = new WhileStmt(conditional, body);
+
+			if (initializer != null) {
+				body = new BlockStmt(new List<Stmt> {
+					initializer,
+					body
+				});
+			}
+
+			return body;
 		}
 
 		Stmt PrintStatement()
@@ -234,15 +301,20 @@ primary        → NUMBER | STRING | "false" | "true" | "nil"
 
 			return new IfStmt(conditionalExpression, thenStatement, elseStatement);
 		}
-		
-		/*
-		 * expression → assignment ;
 
-assignment → identifier "=" assignment
-           | logic_or ;
-logic_or   → logic_and ( "or" logic_and )* ;
-logic_and  → equality ( "and" equality )* ;
-		 */
+		Stmt WhileStatement()
+		{
+			Consume(TokenType.LeftParen, "Expecting opening '('.");
+
+			var condition = Expression();
+
+			Consume(TokenType.RightParen, "Expecting closing ')'");
+
+			var bodyStatement = Statement();
+
+			return new WhileStmt(condition, bodyStatement);
+		}
+
 		Expr Expression()
 		{
 			return Assignment();

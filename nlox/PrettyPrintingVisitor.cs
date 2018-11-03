@@ -79,6 +79,15 @@ namespace nlox
 			}
 		}
 
+		public void Visit(WhileStmt stmt)
+		{
+			AppendLinePrefixed($"(while {stmt.Condition.Accept(this)}");
+			_depth++;
+			stmt.BodyStatement.Accept(this);
+			_depth--;
+			AppendLinePrefixed(")");
+		}
+
 		public void Visit(VarStmt stmt)
 		{
 			AppendLinePrefixed($"(define {stmt.Name} {stmt.Initializer.Accept(this)})");

@@ -32,13 +32,6 @@ namespace nlox
 					input = input + ";";
 				}
 
-				var tokens = new Scanner(input).ScanTokens();
-				var stmts = new Parser(tokens).Parse();
-				foreach (var stmt in stmts) {
-					var printer = new PrettyPrintingVisitor();
-					stmt.Accept(printer);
-					Console.Out.WriteLine(printer.ToString());
-				}
 				Run(input);
 			}
 		}
@@ -72,7 +65,10 @@ namespace nlox
 			if (hadStaticError) {
 				return;
 			}
-			
+
+			var visitor = new PrettyPrintingVisitor();
+			visitor.Visit(new BlockStmt(stmts));
+			Console.Out.WriteLine(visitor.ToString());
 			Interpreter.Interpret(stmts);
 		}
 
