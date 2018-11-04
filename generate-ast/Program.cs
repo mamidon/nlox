@@ -24,6 +24,8 @@ namespace GenerateAst
 			var statementTypes = new[] {
 				"Block : List<Stmt> Statements",
 				"Expression : Expr Expression",
+				"Function   : Token Name, List<Token> Params, List<Stmt> Body", 
+				"Return : Token Keyword, Expr Value",
 				"Print : Expr Expression",
 				"Var : Token Name, Expr Initializer",
 				"If : Expr Condition, Stmt ThenStatement, Stmt ElseStatement",

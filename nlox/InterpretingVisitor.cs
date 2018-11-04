@@ -6,15 +6,15 @@ namespace nlox
 {
 	public class InterpretingVisitor : IExprVisitor<object>, IStmtVisitor
 	{
-		readonly LoxEnvironment _globalEnvironment;
 		LoxEnvironment _currentEnvironment;
-		
+		public LoxEnvironment GlobalEnvironment { get; }
+
 		public InterpretingVisitor()
 		{
-			_globalEnvironment = new LoxEnvironment();
-			_currentEnvironment = _globalEnvironment;
+			GlobalEnvironment = new LoxEnvironment();
+			_currentEnvironment = GlobalEnvironment;
 			var start = DateTime.UtcNow.Ticks;
-			_globalEnvironment.Define("clock", new NativeLoxCallable(0, (args) => (double) (DateTime.UtcNow.Ticks - start) / 10000));
+			GlobalEnvironment.Define("clock", new LoxNativeCallable(0, (args) => (double) (DateTime.UtcNow.Ticks - start) / 10000));
 		}
 		
 		public void Interpret(IEnumerable<Stmt> statements)
@@ -26,6 +26,31 @@ namespace nlox
 			} catch (LoxRuntimeErrorException loxRuntimeError) {
 				Lox.RunTimeError(loxRuntimeError);
 			} 
+		}
+
+		public void Execute(IEnumerable<Stmt> statements, LoxEnvironment customEnvironment)
+		{
+			var holding = _currentEnvironment;
+
+			try {
+				_currentEnvironment = customEnvironment;
+
+				foreach (var innerStmt in statements) {
+					Execute(innerStmt);
+				}
+			} finally {
+				_currentEnvironment = holding;
+			}
+		}
+		
+		public object Evaluate(Expr expr)
+		{
+			return expr.Accept(this);
+		}
+
+		public void Execute(Stmt stmt)
+		{
+			stmt.Accept(this);
 		}
 
 		string stringify(object result)
@@ -46,7 +71,7 @@ namespace nlox
 		public object Visit(AssignExpr expr)
 		{
 			var value = Evaluate(expr.Value);
-			_globalEnvironment.Assign(expr.Name, value);
+			_currentEnvironment.Assign(expr.Name, value);
 			return value;
 		}
 
@@ -143,11 +168,18 @@ namespace nlox
 				if (callable.Arity() != arguments.Count) {
 					throw new LoxRuntimeErrorException(expr.ClosingParen, $"Callee expects {callable.Arity()} arguments, but was passed {arguments.Count} arguments.");
 				}
+
+				try {
+					callable.Call(this, arguments);
+				} catch (LoxReturnException ex) {
+					return ex.Value;
+				}
 				
-				return callable.Call(this, arguments);
 			} else {
 				throw new LoxRuntimeErrorException(expr.ClosingParen, "Callee is not a function");
 			}
+
+			return null;
 		}
 
 		public object Visit(GroupingExpr expr)
@@ -162,22 +194,12 @@ namespace nlox
 
 		public object Visit(VariableExpr expr)
 		{
-			return _globalEnvironment.Get(expr.Name);
+			return _currentEnvironment.Get(expr.Name);
 		}
 
 		public void Visit(BlockStmt stmt)
 		{
-			var holding = _currentEnvironment;
-
-			try {
-				_currentEnvironment = new LoxEnvironment(_currentEnvironment);
-
-				foreach (var innerStmt in stmt.Statements) {
-					Execute(innerStmt);
-				}
-			} finally {
-				_currentEnvironment = holding;
-			}
+			Execute(stmt.Statements, _currentEnvironment);
 		}
 
 		public void Visit(IfStmt stmt)
@@ -189,6 +211,23 @@ namespace nlox
 			} else if (stmt.ElseStatement != null) {
 				Execute(stmt.ElseStatement);
 			}
+		}
+
+		public void Visit(FunctionStmt stmt)
+		{
+			var callable = new LoxFunctionCallable(stmt, _currentEnvironment);
+
+			_currentEnvironment.Define(stmt.Name.Lexeme, callable);
+		}
+
+		public void Visit(ReturnStmt stmt)
+		{
+			object value = null;
+			if (stmt.Value != null) {
+				value = Evaluate(stmt.Value);
+			}
+
+			throw new LoxReturnException(value);
 		}
 
 		public void Visit(WhileStmt stmt)
@@ -206,7 +245,7 @@ namespace nlox
 				value = Evaluate(stmt.Initializer);
 			}
 			
-			_globalEnvironment.Define(stmt.Name.Lexeme, value);
+			_currentEnvironment.Define(stmt.Name.Lexeme, value);
 		}
 
 		public void Visit(PrintStmt stmt)
@@ -217,16 +256,6 @@ namespace nlox
 		public void Visit(ExpressionStmt stmt)
 		{
 			Evaluate(stmt.Expression);
-		}
-
-		object Evaluate(Expr expr)
-		{
-			return expr.Accept(this);
-		}
-
-		void Execute(Stmt stmt)
-		{
-			stmt.Accept(this);
 		}
 
 		bool IsTruthy(object obj)

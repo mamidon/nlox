@@ -178,6 +178,42 @@ namespace nlox
 		}
 	}
 
+	public class FunctionStmt : Stmt
+	{
+		public readonly Token Name;
+		public readonly List<Token> Params;
+		public readonly List<Stmt> Body;
+
+		public FunctionStmt(Token Name, List<Token> Params, List<Stmt> Body)
+		{
+			this.Name = Name;
+			this.Params = Params;
+			this.Body = Body;
+		}
+
+		public override void Accept(IStmtVisitor visitor)
+		{
+			visitor.Visit(this);
+		}
+	}
+
+	public class ReturnStmt : Stmt
+	{
+		public readonly Token Keyword;
+		public readonly Expr Value;
+
+		public ReturnStmt(Token Keyword, Expr Value)
+		{
+			this.Keyword = Keyword;
+			this.Value = Value;
+		}
+
+		public override void Accept(IStmtVisitor visitor)
+		{
+			visitor.Visit(this);
+		}
+	}
+
 	public class PrintStmt : Stmt
 	{
 		public readonly Expr Expression;

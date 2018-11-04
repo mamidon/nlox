@@ -1,9 +1,14 @@
-var a = 0;
-var b = 1;
+var a = "global";
 
-while (a < 10000) {
-  print a;
-  var temp = a;
-  a = b;
-  b = temp + b;
+fun foo() {
+    fun inner() {
+        print a;
+    }
+    
+    inner();
+    var a = "other";
+    inner();
+    
 }
+
+foo();

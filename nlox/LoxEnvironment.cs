@@ -16,6 +16,7 @@ namespace nlox
 		public LoxEnvironment(LoxEnvironment environment)
 		{
 			_enclosingEnvironment = environment;
+			_state = new Dictionary<string, object>();
 		}
 
 		public void Define(string name, object value)
@@ -32,6 +33,7 @@ namespace nlox
 
 			if (_enclosingEnvironment != null) {
 				_enclosingEnvironment.Assign(name, value);
+				return;
 			}
 			
 			throw new LoxRuntimeErrorException(name, $"Undefined variable '{name.Lexeme}'");

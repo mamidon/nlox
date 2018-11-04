@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Linq;
 
 namespace nlox
@@ -8,13 +9,18 @@ namespace nlox
 program     → declaration* EOF ;
 
 declaration → varDecl
+			| funDecl
             | statement ;
             
 varDecl → "var" IDENTIFIER ( "=" expression )? ";" ;
+funDecl → "fun" function ;
+function → IDENTIFIER "(" parameters? ")" ;
+parameters → IDENTIFIER ( "," IDENTIFIER )* ;
 
 statement   → exprStmt
 			| ifStmt
 			| whileStmt
+			| returnStmt
 			| forStmt
             | printStmt
             | block ;
@@ -24,6 +30,7 @@ printStmt → "print" expression ";" ;
 block → "{" declaration* "}" ;
 ifStmt    → "if" "(" expression ")" statement ( "else" statement )? ;
 whileStmt → "while" "(" expression ")" statement ;
+returnStmt → "return" expression? ";" ;
 forStmt → "for" "(" 
 	( varDecl | exprStmt ";" ) 
 	expression? ";" 
@@ -166,11 +173,42 @@ primary        → NUMBER | STRING | "false" | "true" | "nil"
 					return VarDeclaration();
 				}
 
+				if (MatchNext(TokenType.Fun)) {
+					return FunDeclaration("function");
+				}
+
 				return Statement();
 			} catch (LoxStaticErrorException) {
 				Synchronize();
 				return null;
 			}
+		}
+
+		Stmt FunDeclaration(string functionType)
+		{
+			var name = Consume(TokenType.Identifier, $"Expected a {functionType} name.");
+
+			Consume(TokenType.LeftParen, "Expected opening '('.");
+
+			var parameters = new List<Token>();
+
+			if (PeekNext().Type != TokenType.RightParen) {
+				do {
+					if (parameters.Count > 8) {
+						CreateStaticError(parameters[parameters.Count - 1],
+							$"Only 8 parameters are supported for {functionType} declarations.");
+					}
+
+					parameters.Add(Consume(TokenType.Identifier, "Expected a valid identifier"));
+				} while (MatchNext(TokenType.Comma));
+			}
+
+			Consume(TokenType.RightParen, "Expected closing ')'.");
+			Consume(TokenType.LeftBrace, "Expected opening '}'");
+			
+			var body = BlockStatement();
+
+			return new FunctionStmt(name, parameters, body.Statements);
 		}
 
 		Stmt VarDeclaration()
@@ -202,6 +240,10 @@ primary        → NUMBER | STRING | "false" | "true" | "nil"
 
 			if (MatchNext(TokenType.While)) {
 				return WhileStatement();
+			}
+
+			if (MatchNext(TokenType.Return)) {
+				return ReturnStatement();
 			}
 
 			if (MatchNext(TokenType.For)) {
@@ -275,7 +317,7 @@ primary        → NUMBER | STRING | "false" | "true" | "nil"
 			return new ExpressionStmt(expr);
 		}
 
-		Stmt BlockStatement()
+		BlockStmt BlockStatement()
 		{
 			var stmts = new List<Stmt>();
 			while (PeekNext().Type != TokenType.RightBrace && !IsAtEnd()) {
@@ -316,6 +358,18 @@ primary        → NUMBER | STRING | "false" | "true" | "nil"
 			var bodyStatement = Statement();
 
 			return new WhileStmt(condition, bodyStatement);
+		}
+
+		Stmt ReturnStatement()
+		{
+			var token = Previous();
+			Expr result = new LiteralExpr(null);
+			if (PeekNext().Type != TokenType.SemiColon) {
+				result = Expression();
+			} 
+			
+			Consume(TokenType.SemiColon, "Expected ';' after return.");
+			return new ReturnStmt(token, result);
 		}
 
 		Expr Expression()

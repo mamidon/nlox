@@ -84,6 +84,23 @@ namespace nlox
 			}
 		}
 
+		public void Visit(FunctionStmt stmt)
+		{
+			AppendLinePrefixed($"({stmt}");
+			_depth++;
+			foreach (var step in stmt.Body) {
+				step.Accept(this);
+			}
+
+			_depth--;
+			AppendLinePrefixed(")");
+		}
+
+		public void Visit(ReturnStmt stmt)
+		{
+			
+		}
+
 		public void Visit(WhileStmt stmt)
 		{
 			AppendLinePrefixed($"(while {stmt.Condition.Accept(this)}");
