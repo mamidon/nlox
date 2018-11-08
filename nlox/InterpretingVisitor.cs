@@ -7,14 +7,21 @@ namespace nlox
 	public class InterpretingVisitor : IExprVisitor<object>, IStmtVisitor
 	{
 		LoxEnvironment _currentEnvironment;
+		List<LoxAssertionResult> _assertions;
+		
 		public LoxEnvironment GlobalEnvironment { get; }
-
+		public IReadOnlyList<LoxAssertionResult> Assertions => _assertions;
+		
 		public InterpretingVisitor()
 		{
 			GlobalEnvironment = new LoxEnvironment();
+			_assertions = new List<LoxAssertionResult>();
+			
 			_currentEnvironment = GlobalEnvironment;
+			
 			var start = DateTime.UtcNow.Ticks;
 			GlobalEnvironment.Define("clock", new LoxNativeCallable(0, (args) => (double) (DateTime.UtcNow.Ticks - start) / 10000));
+			GlobalEnvironment.Define("assert", AssertLoxNativeCallable.CreateAssertLoxNativeCallable(_assertions));
 		}
 		
 		public void Interpret(IEnumerable<Stmt> statements)

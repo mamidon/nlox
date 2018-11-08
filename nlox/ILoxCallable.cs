@@ -27,7 +27,29 @@ namespace nlox
 
 		public object Call(InterpretingVisitor interpreter, List<object> arguments)
 		{
-			return _func(arguments);
+			throw new LoxReturnException(_func(arguments));
+		}
+	}
+
+	public static class AssertLoxNativeCallable 
+	{
+		public static LoxNativeCallable CreateAssertLoxNativeCallable(List<LoxAssertionResult> assertions)
+		{
+			return new LoxNativeCallable(3, args => {
+				var result = Assert(args[0] as string, args[1], args[2]);
+				assertions.Add(result);
+				return null;
+			});
+		}
+
+		static LoxAssertionResult Assert(string message, object expected, object actual)
+		{
+			return new LoxAssertionResult {
+				Passed = (expected == null && actual == null) || (expected != null && expected.Equals(actual)),
+				Actual = actual,
+				Expected = expected,
+				Message = message
+			};
 		}
 	}
 

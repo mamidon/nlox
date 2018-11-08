@@ -4,6 +4,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "nlox", "nlox\nlox.csproj", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GenerateAst", "generate-ast\GenerateAst.csproj", "{45579D47-2F81-4FD5-BAF3-A806496AC0EB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "nlox.tests", "nlox.tests\nlox.tests.csproj", "{30A4EFC7-8822-4D24-A2A0-C8125A3A5EAE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +20,9 @@ Global
 		{45579D47-2F81-4FD5-BAF3-A806496AC0EB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{45579D47-2F81-4FD5-BAF3-A806496AC0EB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{45579D47-2F81-4FD5-BAF3-A806496AC0EB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{30A4EFC7-8822-4D24-A2A0-C8125A3A5EAE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{30A4EFC7-8822-4D24-A2A0-C8125A3A5EAE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{30A4EFC7-8822-4D24-A2A0-C8125A3A5EAE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{30A4EFC7-8822-4D24-A2A0-C8125A3A5EAE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

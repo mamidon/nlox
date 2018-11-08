@@ -35,7 +35,8 @@ namespace nlox
 		{
 			Tokens = new List<Token>();
 			Source = source;
-			_line = _startOfNextLexeme = _currentCharacter = 0;
+			_line = 1;
+			_startOfNextLexeme = _currentCharacter = 0;
 		}
 		
 		public IReadOnlyList<Token> ScanTokens()
@@ -184,6 +185,7 @@ namespace nlox
 
 			if (IsAtEnd()) {
 				Lox.StaticError(_line, "Unterminated string.");
+				return;
 			}
 
 			Consume();
