@@ -8,6 +8,7 @@ namespace nlox
 	{
 		LoxEnvironment _currentEnvironment;
 		List<LoxAssertionResult> _assertions;
+		Dictionary<Expr, int> _scopeMap;
 		
 		public LoxEnvironment GlobalEnvironment { get; }
 		public IReadOnlyList<LoxAssertionResult> Assertions => _assertions;
@@ -16,7 +17,7 @@ namespace nlox
 		{
 			GlobalEnvironment = new LoxEnvironment();
 			_assertions = new List<LoxAssertionResult>();
-			
+			_scopeMap = new Dictionary<Expr, int>();
 			_currentEnvironment = GlobalEnvironment;
 			
 			var start = DateTime.UtcNow.Ticks;
@@ -59,6 +60,11 @@ namespace nlox
 		{
 			stmt.Accept(this);
 		}
+		
+		public void Resolve(Expr expr, int distance)
+		{
+			_scopeMap[expr] = distance;
+		}
 
 		string stringify(object result)
 		{
@@ -78,7 +84,14 @@ namespace nlox
 		public object Visit(AssignExpr expr)
 		{
 			var value = Evaluate(expr.Value);
-			_currentEnvironment.Assign(expr.Name, value);
+
+			if (_scopeMap.ContainsKey(expr)) {
+				var distance = _scopeMap[expr];
+				_currentEnvironment.AssignAt(distance, expr.Name, value);
+			} else {
+				GlobalEnvironment.Assign(expr.Name, value);
+			}
+			
 			return value;
 		}
 
@@ -201,7 +214,7 @@ namespace nlox
 
 		public object Visit(VariableExpr expr)
 		{
-			return _currentEnvironment.Get(expr.Name);
+			return LookupVariableByResolution(expr.Name, expr);
 		}
 
 		public void Visit(BlockStmt stmt)
@@ -304,6 +317,16 @@ namespace nlox
 		{
 			VerifyIsDouble(@operator, a);
 			VerifyIsDouble(@operator, b);
+		}
+
+		object LookupVariableByResolution(Token name, Expr expr)
+		{
+			if (!_scopeMap.ContainsKey(expr)) {
+				return GlobalEnvironment.Get(name);
+			} else {
+				var distance = _scopeMap[expr];
+				return _currentEnvironment.GetAt(distance, name);
+			}
 		}
 	}
 }

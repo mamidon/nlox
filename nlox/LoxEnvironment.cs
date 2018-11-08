@@ -51,5 +51,27 @@ namespace nlox
 			
 			throw new LoxRuntimeErrorException(identifier, $"Undefined variable '{identifier.Lexeme}'");
 		}
+
+		public object GetAt(int distance, Token name)
+		{
+			return GetAncestor(distance).Get(name);
+		}
+		
+		
+		public void AssignAt(int distance, Token name, object value)
+		{
+			GetAncestor(distance).Assign(name, value);
+		}
+
+		LoxEnvironment GetAncestor(int distance)
+		{
+			var environment = this;
+
+			for (var i = 0; i < distance; i++) {
+				environment = environment._enclosingEnvironment;
+			}
+
+			return environment;
+		}
 	}
 }

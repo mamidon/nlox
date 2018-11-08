@@ -66,9 +66,8 @@ namespace nlox
 				return;
 			}
 
-			var visitor = new PrettyPrintingVisitor();
-			visitor.Visit(new BlockStmt(stmts));
-			Console.Out.WriteLine(visitor.ToString());
+			var resolve = new ResolutionVisitor(Interpreter);
+			resolve.Resolve(stmts);
 			Interpreter.Interpret(stmts);
 		}
 
