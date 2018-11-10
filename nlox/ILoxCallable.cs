@@ -57,11 +57,13 @@ namespace nlox
 	{
 		readonly FunctionStmt _functionStmt;
 		readonly LoxEnvironment _closure;
+		readonly bool _isInitializer;
 
-		public LoxFunctionCallable(FunctionStmt stmt, LoxEnvironment closure)
+		public LoxFunctionCallable(FunctionStmt stmt, LoxEnvironment closure, bool isInitializer = false)
 		{
 			_functionStmt = stmt;
 			_closure = closure;
+			_isInitializer = isInitializer;
 		}
 		
 		public int Arity()
@@ -77,10 +79,24 @@ namespace nlox
 				environment.Define(_functionStmt.Params[i].Lexeme, arguments[i]);
 			}
 
-			
-			interpreter.Execute(_functionStmt.Body, environment);
+			try {
+				interpreter.Execute(_functionStmt.Body, environment);
+			} catch (LoxReturnException ex) {
+				if (_isInitializer) {
+					throw new LoxReturnException(_closure.GetAt(0, new Token(TokenType.This, "this", null, 0)));
+				}
+
+				throw;
+			}
 
 			return null;
+		}
+
+		public LoxFunctionCallable Bind(LoxInstance instance)
+		{
+			var binding = new LoxEnvironment(_closure);
+			binding.Bind(instance);
+			return new LoxFunctionCallable(_functionStmt, binding, _isInitializer);
 		}
 
 		public override string ToString()

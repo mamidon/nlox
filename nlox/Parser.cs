@@ -10,10 +10,12 @@ program     → declaration* EOF ;
 
 declaration → varDecl
 			| funDecl
+			| classDecl
             | statement ;
             
 varDecl → "var" IDENTIFIER ( "=" expression )? ";" ;
 funDecl → "fun" function ;
+classDecl → "class" IDENTIFIER "{" function* "}" ;
 function → IDENTIFIER "(" parameters? ")" ;
 parameters → IDENTIFIER ( "," IDENTIFIER )* ;
 
@@ -52,7 +54,7 @@ multiplication → unary ( ( "/" | "*" ) unary )* ;
 unary          → ( "!" | "-" ) unary
                | call ;
                
-call		   → primary "(" ( arguments )* ")" ;
+call		   → primary ( "(" arguments? ")" | "." IDENTIFIER )* ;
 arguments      → "(" expression ( "," expression )* ")" ;
 primary        → NUMBER | STRING | "false" | "true" | "nil"
                | "(" expression ")" ;
@@ -177,6 +179,10 @@ primary        → NUMBER | STRING | "false" | "true" | "nil"
 					return FunDeclaration("function");
 				}
 
+				if (MatchNext(TokenType.Class)) {
+					return ClassDeclaration();
+				}
+
 				return Statement();
 			} catch (LoxStaticErrorException) {
 				Synchronize();
@@ -184,7 +190,23 @@ primary        → NUMBER | STRING | "false" | "true" | "nil"
 			}
 		}
 
-		Stmt FunDeclaration(string functionType)
+		Stmt ClassDeclaration()
+		{
+			var name = Consume(TokenType.Identifier, "Expected a class name.");
+			var methods = new List<FunctionStmt>();
+			
+			Consume(TokenType.LeftBrace, "Expected an opening '{'.");
+
+			while (PeekNext().Type != TokenType.RightBrace && !IsAtEnd()) {
+				methods.Add(FunDeclaration("method"));
+			}
+
+			Consume(TokenType.RightBrace, "Expected a closing '}'.");
+
+			return new ClassStmt(name, methods);
+		}
+
+		FunctionStmt FunDeclaration(string functionType)
 		{
 			var name = Consume(TokenType.Identifier, $"Expected a {functionType} name.");
 
@@ -363,7 +385,7 @@ primary        → NUMBER | STRING | "false" | "true" | "nil"
 		Stmt ReturnStatement()
 		{
 			var token = Previous();
-			Expr result = new LiteralExpr(null);
+			Expr result = null;
 			if (PeekNext().Type != TokenType.SemiColon) {
 				result = Expression();
 			} 
@@ -387,6 +409,8 @@ primary        → NUMBER | STRING | "false" | "true" | "nil"
 
 				if (expr is VariableExpr variableExpr) {
 					return new AssignExpr(variableExpr.Name, value);
+				} else if (expr is GetExpr getExpr) {
+					return new SetExpr(getExpr.Instance, getExpr.Name, value);
 				}
 
 				CreateStaticError(equals, "Invalid assignment target");
@@ -498,6 +522,9 @@ primary        → NUMBER | STRING | "false" | "true" | "nil"
 			while (true) {
 				if (MatchNext(TokenType.LeftParen)) {
 					expr = FinishCallExpression(expr);
+				} else if (MatchNext(TokenType.Dot)) {
+					var name = Consume(TokenType.Identifier, "Expected a property identifier after '.'.");
+					expr = new GetExpr(expr, name);
 				} else {
 					break;
 				}
@@ -545,6 +572,10 @@ primary        → NUMBER | STRING | "false" | "true" | "nil"
 
 			if (MatchNext(TokenType.Identifier)) {
 				return new VariableExpr(Previous());
+			}
+			
+			if (MatchNext(TokenType.This)) {
+				return new ThisExpr(Previous());
 			}
 
 

@@ -77,6 +77,23 @@ namespace nlox
 		}
 	}
 
+	public class GetExpr : Expr
+	{
+		public readonly Expr Instance;
+		public readonly Token Name;
+
+		public GetExpr(Expr Instance, Token Name)
+		{
+			this.Instance = Instance;
+			this.Name = Name;
+		}
+
+		public override R Accept<R>(IExprVisitor<R> visitor)
+		{
+			return visitor.Visit(this);
+		}
+	}
+
 	public class LiteralExpr : Expr
 	{
 		public readonly object Value;
@@ -84,6 +101,40 @@ namespace nlox
 		public LiteralExpr(object Value)
 		{
 			this.Value = Value;
+		}
+
+		public override R Accept<R>(IExprVisitor<R> visitor)
+		{
+			return visitor.Visit(this);
+		}
+	}
+
+	public class SetExpr : Expr
+	{
+		public readonly Expr Instance;
+		public readonly Token Name;
+		public readonly Expr Value;
+
+		public SetExpr(Expr Instance, Token Name, Expr Value)
+		{
+			this.Instance = Instance;
+			this.Name = Name;
+			this.Value = Value;
+		}
+
+		public override R Accept<R>(IExprVisitor<R> visitor)
+		{
+			return visitor.Visit(this);
+		}
+	}
+
+	public class ThisExpr : Expr
+	{
+		public readonly Token Keyword;
+
+		public ThisExpr(Token Keyword)
+		{
+			this.Keyword = Keyword;
 		}
 
 		public override R Accept<R>(IExprVisitor<R> visitor)
@@ -189,6 +240,23 @@ namespace nlox
 			this.Name = Name;
 			this.Params = Params;
 			this.Body = Body;
+		}
+
+		public override void Accept(IStmtVisitor visitor)
+		{
+			visitor.Visit(this);
+		}
+	}
+
+	public class ClassStmt : Stmt
+	{
+		public readonly Token Name;
+		public readonly List<FunctionStmt> Methods;
+
+		public ClassStmt(Token Name, List<FunctionStmt> Methods)
+		{
+			this.Name = Name;
+			this.Methods = Methods;
 		}
 
 		public override void Accept(IStmtVisitor visitor)

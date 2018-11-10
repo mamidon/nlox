@@ -1,42 +1,39 @@
-{
-    var A = "global";
-    
-    fun VarDeclarationsRespectClosureScopes() {
-        assert("A is bound to global scope initially", "global", A);
-        
-        fun Bar() {
-            var A = "inner";
-            
-            assert("A is bound to inner scope", "inner", A);
-        }
-        
-        assert("A is bound to global scope after declaring fun Bar", "global", A);
-        Bar();
-        assert("A outside of the closure is still bound to global scope", "global", A);
-    }
-    
-    VarDeclarationsRespectClosureScopes();
+
+// sugared
+
+fun Fizz(a: int, b: utf8) -> [Element] {
+    return [
+        Span(a),
+        ..children,
+        Span(b)
+    ];
 }
 
-{
-    var A = "global";
-    
-    fun VarReferencesAreResolvedLexically() {
-        fun inner(expected) {
-            assert("A has the expected value from lexical resolution", expected, A);
-        }
-        
-        inner("global");
-        var A = "other";
-        inner("global");
-    }
-    
-    VarReferencesAreResolvedLexically();
+fun Other(c: utf8) -> [Element] {
+    return [
+        Span(c),
+        ..children,
+        Span(c)
+    ];
 }
 
-{
-    assert("math works", 4, 2 + 2);
-    assert("math works", 12, 3 * (2 + 2));
-    assert("math works", -2, 3 * (2 / -3));
-    assert("math works", 2, 3 * (2 / 3));
+fun Top() -> [Element] {
+    return [
+        Fizz(1, "hey") [
+            2, [
+                3, 
+                4, 
+                5
+            ], 
+            6
+        ],
+        Other("test")
+    ];
+}
+
+// desugared
+
+fun Fizz(a: int, b: utf8) -> [Element] {
+    yield Span(a);
+    yield Span(b);
 }

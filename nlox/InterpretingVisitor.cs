@@ -23,6 +23,7 @@ namespace nlox
 			var start = DateTime.UtcNow.Ticks;
 			GlobalEnvironment.Define("clock", new LoxNativeCallable(0, (args) => (double) (DateTime.UtcNow.Ticks - start) / 10000));
 			GlobalEnvironment.Define("assert", AssertLoxNativeCallable.CreateAssertLoxNativeCallable(_assertions));
+			GlobalEnvironment.Define("stringify", new LoxNativeCallable(1, (arg) => arg[0]?.ToString() ?? "nil"));
 		}
 		
 		public void Interpret(IEnumerable<Stmt> statements)
@@ -178,6 +179,11 @@ namespace nlox
 			}
 		}
 
+		public object Visit(ThisExpr expr)
+		{
+			return LookupVariableByResolution(expr.Keyword, expr);
+		}
+
 		public object Visit(CallExpr expr)
 		{
 			var callee = Evaluate(expr.Callee);
@@ -200,6 +206,30 @@ namespace nlox
 			}
 
 			return null;
+		}
+
+		public object Visit(GetExpr expr)
+		{
+			var evaluatedValue = Evaluate(expr.Instance);
+
+			if (evaluatedValue is LoxInstance instance) {
+				return instance.Get(expr.Name);
+			}
+
+			throw new LoxRuntimeErrorException(expr.Name, "Only Lox class instances can have properties.");
+		}
+
+		public object Visit(SetExpr expr)
+		{
+			var evaluatedValue = Evaluate(expr.Instance);
+
+			if (evaluatedValue is LoxInstance instance) {
+				instance.Set(expr.Name, Evaluate(expr.Value));
+
+				return null;
+			}
+
+			throw new LoxRuntimeErrorException(expr.Name, "Only Lox class instances can have properties.");
 		}
 
 		public object Visit(GroupingExpr expr)
@@ -238,6 +268,21 @@ namespace nlox
 			var callable = new LoxFunctionCallable(stmt, _currentEnvironment);
 
 			_currentEnvironment.Define(stmt.Name.Lexeme, callable);
+		}
+
+		public void Visit(ClassStmt stmt)
+		{
+			_currentEnvironment.Define(stmt.Name.Lexeme, null);
+
+			var methods = stmt.Methods.Select(m => new {
+				Name = m.Name.Lexeme,
+				Method = new LoxFunctionCallable(m, _currentEnvironment, isInitializer: m.Name.Lexeme.Equals("init"))
+			}).ToDictionary(tuple => tuple.Name, tuple => tuple.Method);
+
+			var classDefinition = new LoxClass(stmt.Name.Lexeme, methods);
+			
+			_currentEnvironment.Assign(stmt.Name, classDefinition);
+			
 		}
 
 		public void Visit(ReturnStmt stmt)

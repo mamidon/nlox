@@ -59,15 +59,18 @@ namespace nlox
 				var tokens = scanner.ScanTokens();
 				var parser = new Parser(tokens);
 				stmts = parser.Parse();
+				var resolve = new ResolutionVisitor(Interpreter);
+				resolve.Resolve(stmts);
 			} catch (LoxStaticErrorException loxStaticError) {
+				StaticError(loxStaticError.Token.Line, loxStaticError.Message);
+				return;
 			}
 
 			if (hadStaticError) {
 				return;
 			}
 
-			var resolve = new ResolutionVisitor(Interpreter);
-			resolve.Resolve(stmts);
+			
 			Interpreter.Interpret(stmts);
 		}
 

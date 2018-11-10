@@ -39,6 +39,11 @@ namespace nlox
 			throw new LoxRuntimeErrorException(name, $"Undefined variable '{name.Lexeme}'");
 		}
 
+		public void Bind(LoxInstance instance)
+		{
+			_state["this"] = instance;
+		}
+
 		public object Get(Token identifier)
 		{
 			if (_state.ContainsKey(identifier.Lexeme)) {
